@@ -1,0 +1,10 @@
+// pcsenior
+// http://fontsforweb.com/font/show?id=874
+
+// Bitstream Vera
+// http://en.wikipedia.org/wiki/Bitstream_Vera
+// http://www.fontsquirrel.com/fonts/Bitstream-Vera-Sans-Mono
+
+// DejaVu
+// http://en.wikipedia.org/wiki/DejaVu_fonts
+// http://www.fontsquirrel.com/fonts/dejavu-sans-mono
