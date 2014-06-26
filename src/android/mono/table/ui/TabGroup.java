@@ -32,7 +32,6 @@ package android.mono.table.ui;
 import android.content.*;
 import android.graphics.*;
 import android.mono.table.app.*;
-import android.mono.table.etc.*;
 import android.view.*;
 import android.widget.*;
 
@@ -75,8 +74,9 @@ public class TabGroup extends LinearLayout implements View.OnClickListener {
         b.setTextColor(C.NC_GREEN);
         b.setBackgroundColor(C.NC_DKGRAY);
         b.setTypeface(((Act)getContext()).getTypeface());
-        b.setTextSize(C.PIXEL, ((Act)getContext()).getTextSizePixels());
-        int px = Math.round(util.unitToPixels(C.POINT, ((Act)getContext()).getTextSizePoints()));
+        float pixels = ((Act)getContext()).getTextSizePixels();
+        b.setTextSize(C.PIXEL, pixels);
+        int px = Math.round(pixels);
         b.setPadding(px, px / 2, px, px / 2);
         buttons.addView(b);
         b.setOnClickListener(this);

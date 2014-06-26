@@ -31,9 +31,9 @@ package android.mono.table.data;
 
 import static android.mono.table.etc.util.*;
 
-public final class SysMem extends ProcFS {
+public final class MemInfo extends ProcFS {
 
-    public SysMem() {
+    public MemInfo() {
         super(3);
     }
 

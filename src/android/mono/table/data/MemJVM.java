@@ -32,18 +32,54 @@ package android.mono.table.data;
 import android.graphics.*;
 import android.mono.table.etc.*;
 
-public class JavaMem implements DataModel {
+import static android.mono.table.etc.util.*;
 
-    private final static String[] header = {"free", "total", "max KB", "draw"};
-    private final Text[] head = new Text[] { new Text(32), new Text(32), new Text(32), new Text(32) };
-    private final Text[] text = new Text[] { new Text(32), new Text(32), new Text(32), new Text(32) };
-    private int[] repaint;
+public class MemJVM implements DataModel {
+
+    private final static String[] header = {"free", "total", "max KB"};
+    private Text[] head;
+    private Text[] text;
+    private int[] counters = EMPTY_INT;
     private Rect bounds;
 
+    private static final int[] EMPTY_INT = new int[0];
+    private static final CharSequence[] EMPTY_CS = new CharSequence[0];
+
     public void open(Object... args) {
-        repaint = (int[])args[0];
+        CharSequence[] titles;
+        if (args.length == 2) {
+            counters = (int[])args[0];
+            titles = (CharSequence[])args[1];
+        } else {
+            counters = EMPTY_INT;
+            titles = EMPTY_CS;
+        }
+        assertion(titles.length == counters.length);
+        if (head == null || head.length != header.length + titles.length) {
+            head = new Text[header.length + titles.length];
+        }
+        if (text == null || text.length != header.length + counters.length) {
+            text = new Text[header.length + counters.length];
+        }
+        assertion(text.length == head.length);
         for (int i = 0; i < text.length; i++) {
+            if (head[i] == null) {
+                head[i] = new Text(32);
+            } else {
+                head[i].reset();
+            }
+            if (text[i] == null) {
+                text[i] = new Text(32);
+            }
+        }
+        int i = 0;
+        while (i < header.length) {
             head[i].append(header[i]);
+            i++;
+        }
+        while (i < head.length) {
+            head[i].append(titles[i - header.length]);
+            i++;
         }
     }
 
@@ -53,12 +89,15 @@ public class JavaMem implements DataModel {
         Runtime rt = Runtime.getRuntime();
         for (int i = 0; i < text.length; i++) {
             text[i].reset();
-            switch (i) {
-                case 0: text[i].append(rt.freeMemory() / 1024); break;
-                case 1: text[i].append(rt.totalMemory() / 1024); break;
-                case 2: text[i].append(rt.maxMemory() / 1024); break;
-                case 3: text[i].append(repaint[0]); break;
-                default: throw new Error("unexpected column " + i);
+            if (i >= header.length) {
+                text[i].append(counters[i - header.length]); break;
+            } else {
+                switch (i) {
+                    case 0: text[i].append(rt.freeMemory() / 1024); break;
+                    case 1: text[i].append(rt.totalMemory() / 1024); break;
+                    case 2: text[i].append(rt.maxMemory() / 1024); break;
+                    default: throw new Error("unexpected index " + i);
+                }
             }
         }
         if (done != null) {

@@ -46,18 +46,22 @@ public class Act extends BaseActivity {
 
     private DataModel words;
     private DataModel cpu;
-    private DataModel sysMem;
-    private DataModel javaMem;
-    private long cpuNanos = System.nanoTime();
+    private DataModel mem;
+    private DataModel jvm;
     private TableView tableCPU;
-    private TableView tableSysMem;
-    private TableView tableJavaMem;
+    private TableView tableMem;
+    private TableView tableJVM;
+
+    private final Runnable invalidateCPU = new Runnable() { public void run() { tableCPU.invalidate(); } };
+    private final Runnable invalidateMem = new Runnable() { public void run() { tableMem.invalidate(); } };
+    private final Runnable invalidateJVM = new Runnable() { public void run() { tableJVM.invalidate(); } };
+
     private final Paint paint = new Paint();
     private final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(C.WRAP_WRAP) {{ setMargins(9, 7, 9, 7); }};
     private final int[] repaint = new int[1];
     private CheckBox cbx;
     private boolean running;
-    private Typeface typeface;
+    private static Typeface typeface;
 
     public final Typeface getTypeface() {
         return typeface;
@@ -75,109 +79,88 @@ public class Act extends BaseActivity {
         super.onCreate(savedInstanceState);
         typeface = TypefaceLoader.loadTypeface(this, "DejaVuSansMono-Bold");
         words = new Words(this);
-        sysMem = new SysMem();
+        mem = new MemInfo();
         cpu = new CPU();
-        javaMem = new JavaMem();
-        paint.setColor(C.NC_LTBLUE);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setFlags(paint.getFlags() | Paint.SUBPIXEL_TEXT_FLAG|Paint.ANTI_ALIAS_FLAG|Paint.DEV_KERN_TEXT_FLAG);
-        if (!typeface.isBold()) {
-            paint.setFlags(paint.getFlags() | Paint.FAKE_BOLD_TEXT_FLAG);
-        }
-        paint.setTypeface(typeface);
-        paint.setTextSize(getTextSizePixels());
+        jvm = new MemJVM();
+        words.open(R.raw.words);
+        jvm.open(repaint, new String[]{"draw"});
+        mem.open("/proc/meminfo");
+        cpu.open("/proc/stat");
+        words.update(wordsLoaded);
+        initPaint();
         setContentView(createLinerLayout(LinearLayout.VERTICAL));
     }
 
-    public void onStart() {
-        super.onStart();
+    public void onResume() {
+        super.onResume();
         running = true;
-        javaMem.open((Object)repaint);
-        words.open(R.raw.words);
-        sysMem.open("/proc/meminfo");
-        cpu.open("/proc/stat");
-        javaMem.update(null);
-        cpu.update(null);
-        words.update(wordsLoaded);
+        if (cv.getChildCount() > 0) {
+            jvm.update(invalidateJVM);
+            post(updateProcFS);
+        }
     }
 
     public void onPause() {
         super.onPause();
         running = false;
-        close(words);
-        close(sysMem);
-        close(sysMem);
+    }
+
+    public void onDestroy() {
+        cv.removeAllViews();
+        close(jvm);
+        close(mem);
         close(cpu);
-    }
-
-    private final Runnable cpuLoaded = new Runnable() { public void run() { cpuLoaded(); } };
-
-    private void cpuLoaded() {
-        if (running) {
-            createViews();
-        }
-    }
-
-    private final Runnable memInfoLoaded = new Runnable() { public void run() { memInfoLoaded(); } };
-
-    private void memInfoLoaded() {
-        if (running) {
-            cpu.update(cpuLoaded);
-        }
+        close(words);
+        super.onDestroy();
     }
 
     private final Runnable wordsLoaded = new Runnable() { public void run() { wordsLoaded(); } };
 
-    private void wordsLoaded() {
-        if (running) {
-            sysMem.update(memInfoLoaded);
-        }
-    }
+    private void wordsLoaded() { mem.update(memLoaded); }
 
-    private final Runnable invalidateCPU = new Runnable() {
-        public void run() {
-            long now = System.nanoTime();
-            long delay = CPU_REFRESH_IN_MILLIS - (now - cpuNanos) * 1000 / C.NANOS_IN_SECOND;
-            tableCPU.postInvalidateDelayed(Math.min(delay, CPU_REFRESH_IN_MILLIS));
-            cpuNanos = now;
-        }
-    };
+    private final Runnable memLoaded = new Runnable() { public void run() { memLoaded(); } };
 
-    private final Runnable invalidateSysMem = new Runnable() {
-        public void run() {
-            tableSysMem.invalidate();
-        }
-    };
+    private void memLoaded() { cpu.update(cpuLoaded); }
 
-    private final Runnable invalidateJavaMem = new Runnable() {
+    private final Runnable cpuLoaded = new Runnable() { public void run() { cpuLoaded(); } };
+
+    private void cpuLoaded() { createViews(); }
+
+    private final Runnable updateProcFS = new Runnable() {
         public void run() {
-            tableJavaMem.invalidate();
+            if (running) {
+                cpu.update(invalidateCPU);
+                mem.update(invalidateMem);
+                postDelayed(updateProcFS, CPU_REFRESH_IN_MILLIS);
+            }
         }
     };
 
     private void createViews() {
+        assertion(cv.getChildCount() == 0);
         addJavaMemoryAndRedrawButtonPanel();
         LinearLayout hl = createLinerLayout(LinearLayout.HORIZONTAL);
         addWordsPanel(hl);
         hl.addView(addCpuAndSysMemoryPanel(), lp);
         cv.addView(hl, lp);
+        post(updateProcFS);
     }
 
     private void addJavaMemoryAndRedrawButtonPanel() {
         LinearLayout hl = createLinerLayout(LinearLayout.HORIZONTAL);
-        tableJavaMem = new TableView(this) {
+        tableJVM = new TableView(this) {
             public void draw(Canvas canvas) {
                 super.draw(canvas);
-                if (cbx.isChecked()) {
+                if (cbx.isChecked() && running) {
                     repaint[0]++;
-                    javaMem.update(invalidateJavaMem);
+                    jvm.update(invalidateJVM);
                 }
             }
-        }.setModel(new PaintTableModel(javaMem, paint) {
+        }.setModel(new PaintTableModel(jvm, paint) {
             public int justify(int c, int r) { return TableModel.RIGHT_JUSTIFIED; }
             protected int color(int c, int r) { return r == 0 ? C.NC_VERDIGRIS : C.NC_GOLD; }
         });
-        hl.addView(scrollableTable(tableJavaMem));
+        hl.addView(scrollableTable(tableJVM));
         cbx = addCheckBox(hl);
         hl.setPadding(5, 5, 5, 5);
         cv.addView(hl, lp);
@@ -195,30 +178,18 @@ public class Act extends BaseActivity {
     }
 
     private ViewGroup addCpuAndSysMemoryPanel() {
-        tableCPU = new TableView(this) {
-            public void draw(Canvas canvas) {
-                super.draw(canvas);
-                cpu.update(invalidateCPU);
-            }
-        }.setModel(new PaintTableModel(cpu, paint) {
+        tableCPU = new TableView(this).setModel(new PaintTableModel(cpu, paint) {
             public int justify(int c, int r) { return c == 0 ? TableModel.LEFT_JUSTIFIED : TableModel.RIGHT_JUSTIFIED; }
             protected int color(int c, int r) { return c == 0 ? C.NC_GOLD : (c == 1 ? C.NC_LTBLUE : C.NC_VERDIGRIS); }
         });
-        tableSysMem = new TableView(this) {
-            public void draw(Canvas canvas) {
-                super.draw(canvas);
-                if (cbx.isChecked()) {
-                    sysMem.update(invalidateSysMem);
-                }
-            }
-        }.setModel(new PaintTableModel(sysMem, paint) {
+        tableMem = new TableView(this).setModel(new PaintTableModel(mem, paint) {
             public int justify(int c, int r) { return c != 1 ? TableModel.LEFT_JUSTIFIED : TableModel.RIGHT_JUSTIFIED; }
             protected int color(int c, int r) { return c == 0 ? C.NC_GOLD : (c == 1 ? C.NC_LTBLUE : C.NC_VERDIGRIS); }
         });
         TabGroup tg = new TabGroup(this);
         tg.setBackgroundColor(C.NC_DKBLUE);
         tg.addTab("CPU", scrollableTable(tableCPU));
-        tg.addTab("Mem", scrollableTable(tableSysMem));
+        tg.addTab("Mem", scrollableTable(tableMem));
         return tg;
     }
 
@@ -250,6 +221,17 @@ public class Act extends BaseActivity {
         });
         parent.addView(cbx, lp);
         return cbx;
+    }
+
+    private void initPaint() {
+        paint.setColor(C.NC_LTBLUE);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setFlags(paint.getFlags() | Paint.SUBPIXEL_TEXT_FLAG | Paint.ANTI_ALIAS_FLAG | Paint.DEV_KERN_TEXT_FLAG);
+        if (!typeface.isBold()) {
+            paint.setFlags(paint.getFlags() | Paint.FAKE_BOLD_TEXT_FLAG);
+        }
+        paint.setTypeface(typeface);
+        paint.setTextSize(getTextSizePixels());
     }
 
 }

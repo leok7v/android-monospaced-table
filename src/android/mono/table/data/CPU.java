@@ -37,7 +37,6 @@ import static android.mono.table.etc.util.*;
 
 public final class CPU extends ProcFS {
 
-
     // in User HERTZ see: see: https://www.kernel.org/doc/Documentation/filesystems/proc.txt
     public static class Stats {
         int cpu;
@@ -206,20 +205,26 @@ public final class CPU extends ProcFS {
     private void delta(Stats[] st) {
         Stats[] prev = stats[1 - ix];
         for (int cpu = 0; cpu < delta.length; cpu++) {
-            delta[cpu].cpu = st[cpu].cpu; // not a diff
-            delta[cpu].nanos = st[cpu].nanos - prev[cpu].nanos;
-            long milliseconds = delta[cpu].nanos * 1000 / C.NANOS_IN_SECOND;
-            delta[cpu].user = (st[cpu].user - prev[cpu].user) * 1000 / milliseconds;
-            delta[cpu].nice = (st[cpu].nice - prev[cpu].nice) * 1000 / milliseconds;
-            delta[cpu].system = (st[cpu].system - prev[cpu].system) * 1000 / milliseconds;
-            delta[cpu].idle = (st[cpu].idle - prev[cpu].idle) * 1000 / milliseconds;
-            delta[cpu].iowait = (st[cpu].iowait - prev[cpu].iowait) * 1000 / milliseconds;
-            delta[cpu].irq = (st[cpu].irq - prev[cpu].irq) * 1000 / milliseconds;
-            delta[cpu].softirq = (st[cpu].softirq - prev[cpu].softirq) * 1000 / milliseconds;
-            delta[cpu].load = st[cpu].load; // not a diff
+            Stats dt = delta[cpu];
+            dt.cpu = st[cpu].cpu; // not a diff
+            dt.nanos = st[cpu].nanos - prev[cpu].nanos;
+            long milliseconds = dt.nanos * 1000 / C.NANOS_IN_SECOND;
+            if (milliseconds > 0) {
+                dt.user = (st[cpu].user - prev[cpu].user) * 1000 / milliseconds;
+                dt.nice = (st[cpu].nice - prev[cpu].nice) * 1000 / milliseconds;
+                dt.system = (st[cpu].system - prev[cpu].system) * 1000 / milliseconds;
+                dt.idle = (st[cpu].idle - prev[cpu].idle) * 1000 / milliseconds;
+                dt.iowait = (st[cpu].iowait - prev[cpu].iowait) * 1000 / milliseconds;
+                dt.irq = (st[cpu].irq - prev[cpu].irq) * 1000 / milliseconds;
+                dt.softirq = (st[cpu].softirq - prev[cpu].softirq) * 1000 / milliseconds;
+                dt.load = st[cpu].load; // not a diff
+            } else {
+                dt.user = dt.nice = dt.system = dt.idle = dt.iowait = dt.irq = dt.softirq = 0;
+                dt.load = 0;
+                dt.nanos = System.nanoTime();
+            }
         }
     }
-
 
     private float load(int cpu, Stats[] stats0, Stats[] stats1) {
         Stats s0 = stats0[cpu];
