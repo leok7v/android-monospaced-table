@@ -36,13 +36,10 @@ import android.mono.table.ui.*;
 import android.os.*;
 import android.view.*;
 import android.widget.*;
-import android.mono.table.etc.*;
 
 import static android.mono.table.etc.util.*;
 
 public class Act extends BaseActivity {
-
-    private static final int CPU_REFRESH_IN_MILLIS = 5 * 1000;
 
     private DataModel words;
     private DataModel cpu;
@@ -56,28 +53,13 @@ public class Act extends BaseActivity {
     private final Runnable invalidateMem = new Runnable() { public void run() { tableMem.invalidate(); } };
     private final Runnable invalidateJVM = new Runnable() { public void run() { tableJVM.invalidate(); } };
 
-    private final Paint paint = new Paint();
     private final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(C.WRAP_WRAP) {{ setMargins(9, 7, 9, 7); }};
     private final int[] repaint = new int[1];
     private CheckBox cbx;
     private boolean running;
-    private static Typeface typeface;
-
-    public final Typeface getTypeface() {
-        return typeface;
-    }
-
-    public final float getTextSizePoints() {
-        return 8;
-    }
-
-    public final float getTextSizePixels() {
-        return unitToPixels(C.POINT, getTextSizePoints());
-    }
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        typeface = TypefaceLoader.loadTypeface(this, "DejaVuSansMono-Bold");
         words = new Words(this);
         mem = new MemInfo();
         cpu = new CPU();
@@ -87,7 +69,6 @@ public class Act extends BaseActivity {
         mem.open("/proc/meminfo");
         cpu.open("/proc/stat");
         words.update(wordsLoaded);
-        initPaint();
         setContentView(createLinerLayout(LinearLayout.VERTICAL));
     }
 
@@ -116,22 +97,29 @@ public class Act extends BaseActivity {
 
     private final Runnable wordsLoaded = new Runnable() { public void run() { wordsLoaded(); } };
 
-    private void wordsLoaded() { mem.update(memLoaded); }
+    private void wordsLoaded() { mem.update(memUpdate); }
 
-    private final Runnable memLoaded = new Runnable() { public void run() { memLoaded(); } };
+    private final Runnable memUpdate = new Runnable() { public void run() { memUpdated(); } };
 
-    private void memLoaded() { cpu.update(cpuLoaded); }
+    private void memUpdated() { cpu.update(cpuUpdated); }
 
-    private final Runnable cpuLoaded = new Runnable() { public void run() { cpuLoaded(); } };
+    private final Runnable cpuUpdated = new Runnable() { public void run() { cpuUpdated(); } };
 
-    private void cpuLoaded() { createViews(); }
+    private void cpuUpdated() {
+        if (cv.getChildCount() == 0) {
+            createViews();
+        } else {
+            post(invalidateCPU);
+            post(invalidateMem);
+        }
+    }
 
     private final Runnable updateProcFS = new Runnable() {
         public void run() {
             if (running) {
                 cpu.update(invalidateCPU);
                 mem.update(invalidateMem);
-                postDelayed(updateProcFS, CPU_REFRESH_IN_MILLIS);
+                postDelayed(updateProcFS, C.PROCFS_REFRESH_IN_MILLIS);
             }
         }
     };
@@ -140,8 +128,8 @@ public class Act extends BaseActivity {
         assertion(cv.getChildCount() == 0);
         addJavaMemoryAndRedrawButtonPanel();
         LinearLayout hl = createLinerLayout(LinearLayout.HORIZONTAL);
-        addWordsPanel(hl);
-        hl.addView(addCpuAndSysMemoryPanel(), lp);
+        hl.addView(createWordsPanel(), lp);
+        hl.addView(createProcFSPanel(), lp);
         cv.addView(hl, lp);
         post(updateProcFS);
     }
@@ -156,33 +144,33 @@ public class Act extends BaseActivity {
                     jvm.update(invalidateJVM);
                 }
             }
-        }.setModel(new PaintTableModel(jvm, paint) {
+        }.setModel(new PaintTableModel(jvm, G.monospaced) {
             public int justify(int c, int r) { return TableModel.RIGHT_JUSTIFIED; }
             protected int color(int c, int r) { return r == 0 ? C.NC_VERDIGRIS : C.NC_GOLD; }
         });
         hl.addView(scrollableTable(tableJVM));
-        cbx = addCheckBox(hl);
+        cbx = createCheckBox(hl);
         hl.setPadding(5, 5, 5, 5);
         cv.addView(hl, lp);
     }
 
-    private void addWordsPanel(ViewGroup parent) {
-        parent.addView(scrollableTable(new TableView(this).setModel(new PaintTableModel(words, paint) {
+    private View createWordsPanel() {
+        return scrollableTable(new TableView(this).setModel(new PaintTableModel(words, G.monospaced) {
             public int justify(int c, int r) {
                 return c == 0 ? TableModel.LEFT_JUSTIFIED : TableModel.RIGHT_JUSTIFIED;
             }
             protected int color(int c, int r) {
                 return c == 0 ? C.NC_GOLD : (c == 1 ? C.NC_LTBLUE : C.NC_VERDIGRIS);
             }
-        })));
+        }));
     }
 
-    private ViewGroup addCpuAndSysMemoryPanel() {
-        tableCPU = new TableView(this).setModel(new PaintTableModel(cpu, paint) {
+    private ViewGroup createProcFSPanel() {
+        tableCPU = new TableView(this).setModel(new PaintTableModel(cpu, G.monospaced) {
             public int justify(int c, int r) { return c == 0 ? TableModel.LEFT_JUSTIFIED : TableModel.RIGHT_JUSTIFIED; }
             protected int color(int c, int r) { return c == 0 ? C.NC_GOLD : (c == 1 ? C.NC_LTBLUE : C.NC_VERDIGRIS); }
         });
-        tableMem = new TableView(this).setModel(new PaintTableModel(mem, paint) {
+        tableMem = new TableView(this).setModel(new PaintTableModel(mem, G.monospaced) {
             public int justify(int c, int r) { return c != 1 ? TableModel.LEFT_JUSTIFIED : TableModel.RIGHT_JUSTIFIED; }
             protected int color(int c, int r) { return c == 0 ? C.NC_GOLD : (c == 1 ? C.NC_LTBLUE : C.NC_VERDIGRIS); }
         });
@@ -212,7 +200,7 @@ public class Act extends BaseActivity {
         return sv;
     }
 
-    private CheckBox addCheckBox(ViewGroup parent) {
+    private CheckBox createCheckBox(ViewGroup parent) {
         CheckBox cbx = new CheckBox(this);
         cbx.setChecked(true);
         cbx.setText("Redraw Continuously");
@@ -223,25 +211,4 @@ public class Act extends BaseActivity {
         return cbx;
     }
 
-    private void initPaint() {
-        paint.setColor(C.NC_LTBLUE);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setFlags(paint.getFlags() | Paint.SUBPIXEL_TEXT_FLAG | Paint.ANTI_ALIAS_FLAG | Paint.DEV_KERN_TEXT_FLAG);
-        if (!typeface.isBold()) {
-            paint.setFlags(paint.getFlags() | Paint.FAKE_BOLD_TEXT_FLAG);
-        }
-        paint.setTypeface(typeface);
-        paint.setTextSize(getTextSizePixels());
-    }
-
 }
-
-/* Other Typeface options:
-//      http://en.wikipedia.org/wiki/Bitstream_Vera
-//      http://www.fontsquirrel.com/fonts/Bitstream-Vera-Sans-Mono
-//      http://en.wikipedia.org/wiki/DejaVu_fonts
-//      http://www.fontsquirrel.com/fonts/dejavu-sans-mono
-//      typeface = TypefaceLoader.loadTypeface(this, "pcsenior");
-//      typeface = TypefaceLoader.loadTypeface(this, "VeraMono-Bold");
-//      typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
-*/

@@ -40,6 +40,9 @@ public class C {
     public static final int POINT = TypedValue.COMPLEX_UNIT_PT;
     public static final int PIXEL = TypedValue.COMPLEX_UNIT_PX;
 
+    public static final String MONO_TYPEFACE_NAME = "DejaVuSansMono-Bold";
+    public static final float MONO_TYPEFACE_SIZE_IN_POINTS = 8;
+
     public static final int
             BACKGROUND_COLOR = 0xFF112013,
             // http://en.wikipedia.org/wiki/Norton_Commander#mediaviewer/File:Norton_commander.png
@@ -64,5 +67,9 @@ public class C {
             MATCH_MATCH = new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT),
             MATCH_WRAP  = new ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT),
             WRAP_MATCH   = new ViewGroup.LayoutParams(WRAP_CONTENT, MATCH_PARENT);
+
     public static final long NANOS_IN_SECOND = 1000000000L;
+
+    public static final int PROCFS_REFRESH_IN_MILLIS = 2 * 1000;
+
 }

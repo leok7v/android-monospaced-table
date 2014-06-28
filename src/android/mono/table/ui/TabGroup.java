@@ -37,25 +37,42 @@ import android.widget.*;
 
 import java.util.*;
 
+import static android.mono.table.etc.util.*;
+
 public class TabGroup extends LinearLayout implements View.OnClickListener {
 
-    private final ArrayList<View> tabs = new ArrayList<View>();
-    private final LinearLayout buttons;
+    private final ArrayList<View> tabs = new ArrayList<View>(8);
     private final Paint paint = new Paint();
+    private LinearLayout buttons;
+    private Button active;
 
     public TabGroup(Context context) {
         super(context);
+        setOrientation(VERTICAL);
         paint.setColor(C.NC_LTBLUE);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1);
-        setOrientation(VERTICAL);
-        buttons = new LinearLayout(context);
-        buttons.setOrientation(HORIZONTAL);
-        addView(buttons, C.MATCH_WRAP);
-        buttons.setBackgroundColor(Color.WHITE);
     }
 
     public void addTab(String label, View tab) {
+        if (buttons == null) {
+            buttons = new LinearLayout(getContext()) {
+                public void draw(Canvas c) {
+                    super.draw(c);
+                    int w = getWidth() - 1;
+                    int h = getHeight() - 1;
+                    if (active != null) {
+                        c.drawLine(0, h, active.getLeft(), h, paint);
+                        c.drawLine(active.getRight(), h, w + 1, h, paint);
+                    } else {
+                        c.drawLine(0, h, w + 1, h, paint);
+                    }
+                }
+            };
+            buttons.setOrientation(HORIZONTAL);
+            addView(buttons, C.MATCH_WRAP);
+            buttons.setBackgroundColor(C.NC_DKGRAY);
+        }
         tabs.add(tab);
         Button b = new Button(getContext()) {
             public void draw(Canvas c) {
@@ -63,51 +80,60 @@ public class TabGroup extends LinearLayout implements View.OnClickListener {
                 int w = getWidth() - 1;
                 int h = getHeight() - 1;
                 if (isSelected()) {
-                    c.drawLine(0, 0, 0, h, paint);
+                    c.drawLine(0, 0, 0, h + 1, paint);
                     c.drawLine(0, 0, w, 0, paint);
-                    c.drawLine(w, h, w, 0, paint);
+                    c.drawLine(w, 0, w, h + 1, paint);
                 }
             }
         };
         b.setText(label);
         b.setBackgroundResource(0);
-        b.setTextColor(C.NC_GREEN);
-        b.setBackgroundColor(C.NC_DKGRAY);
-        b.setTypeface(((Act)getContext()).getTypeface());
-        float pixels = ((Act)getContext()).getTextSizePixels();
+        b.setTypeface(G.monospaced.getTypeface());
+        b.setTextSize(C.POINT, C.MONO_TYPEFACE_SIZE_IN_POINTS);
+        float pixels = unitToPixels(C.POINT, C.MONO_TYPEFACE_SIZE_IN_POINTS);
         b.setTextSize(C.PIXEL, pixels);
         int px = Math.round(pixels);
         b.setPadding(px, px / 2, px, px / 2);
-        buttons.addView(b);
+        // in some themes (namely Holo) minHeight will be set to (pretty arbitrary) 48px see:
+        // http://stackoverflow.com/questions/16467006/holo-theme-make-my-button-bigger
+        b.setMinHeight(-1);
+        b.setMinimumHeight(-1);
+        deactivate(b);
+        b.setTextColor(C.NC_OFFWHITE);
+        b.setBackgroundColor(C.NC_DKGRAY);
+        buttons.addView(b, C.WRAP_WRAP);
         b.setOnClickListener(this);
         if (getChildCount() == 1) {
-            addView(tab);
-            requestLayout();
-            b.setTextColor(C.NC_OFFWHITE);
-            b.setBackgroundColor(C.NC_BLUE);
-            b.setSelected(true);
+            activate(b, tab);
         }
+    }
+
+    private void activate(Button b, View tab) {
+        if (getChildCount() > 1) {
+            removeViewAt(1);
+        }
+        addView(tab, C.WRAP_WRAP);
+        b.setTextColor(C.NC_GOLD);
+        b.setBackgroundColor(C.NC_BLUE);
+        b.setSelected(true);
+        active = b;
+    }
+
+    private void deactivate(Button b) {
+        b.setTextColor(C.NC_OFFWHITE);
+        b.setBackgroundColor(C.NC_DKGRAY);
+        b.setSelected(false);
     }
 
     public void onClick(View v) {
         if (v instanceof Button) {
             for (int i = 0; i < buttons.getChildCount(); i++) {
-                Button c = (Button)buttons.getChildAt(i);
-                c.setTextColor(C.NC_GREEN);
-                c.setBackgroundColor(C.NC_DKGRAY);
-                c.setSelected(false);
+                deactivate((Button)buttons.getChildAt(i));
             }
             Button b = (Button)v;
             for (int i = 0; i < buttons.getChildCount(); i++) {
                 if (b == buttons.getChildAt(i)) {
-                    if (getChildCount() > 1) {
-                        removeViewAt(1);
-                    }
-                    addView(tabs.get(i));
-                    requestLayout();
-                    b.setTextColor(C.NC_OFFWHITE);
-                    b.setBackgroundColor(C.NC_BLUE);
-                    b.setSelected(true);
+                    activate(b, tabs.get(i));
                     break;
                 }
             }

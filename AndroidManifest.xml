@@ -5,16 +5,9 @@
           android:versionName="1.0">
   <uses-sdk android:minSdkVersion="11" />
   <supports-screens android:xlargeScreens="true" />
-  <application
-      android:label="@string/app_name"
-      android:icon="@drawable/icon"
-      android:allowBackup="true"
-      >
-    <activity
-        android:name="android.mono.table.app.Act"
-        android:label="@string/app_name"
-        android:screenOrientation="landscape"
-        android:theme="@android:style/Theme.NoTitleBar">
+  <application android:name=".app.App" android:label="@string/app_name" android:icon="@drawable/icon" android:allowBackup="true">
+  <activity android:name="android.mono.table.app.Act" android:label="@string/app_name" android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.NoTitleBar">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
