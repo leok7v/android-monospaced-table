@@ -99,6 +99,10 @@ public class Numbers {
         return text;
     }
 
+    public static long parseLong(CharSequence s) {
+        return parse(s, 0, s.length(), 10);
+    }
+
     public static long parseLong(CharSequence s, int offset, int length) {
         return parse(s, offset, length, 10);
     }
@@ -181,7 +185,7 @@ public class Numbers {
     private static Text resultOrSideEffect(Text text, Text s) {
         if (text != null) {
             text.append(s);
-            return null;
+            return text;
         }
         return s;
     }
@@ -309,7 +313,7 @@ public class Numbers {
         } else {
             freeFormat(text, positive);
         }
-        return (text != null) ? null : text;
+        return text;
     }
 
     private void freeFormatExponential(Text text, boolean positive) {
