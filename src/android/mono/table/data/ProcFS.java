@@ -50,7 +50,7 @@ public abstract class ProcFS implements DataModel {
     protected volatile int ix;
     private final AtomicInteger ai = new AtomicInteger();
     private final Data data[] = new Data[2];
-    private final TextWrap textWrap = new TextWrap();
+    private final CharArray charArray = new CharArray();
     private Rect[] bounds;
     private final Rect rc = new Rect();
     private final Runnable updater = new Runnable() { public void run() { updater(); } };
@@ -104,8 +104,8 @@ public abstract class ProcFS implements DataModel {
     }
 
     public TextInterface getText(int c, int r) {
-        textWrap.wrap(data[1 - ix].chars, data[1 - ix].offsets[c][r], data[1 - ix].lengths[c][r]);
-        return textWrap;
+        charArray.wrap(data[1 - ix].chars, data[1 - ix].offsets[c][r], data[1 - ix].lengths[c][r]);
+        return charArray;
     }
 
     public Rect bounds(int c, int r, Paint paint) {

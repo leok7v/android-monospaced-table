@@ -55,7 +55,7 @@ public final class CPU extends ProcFS {
     private final Stats[][] stats = new Stats[2][];
     private final Stats[] delta = new Stats[ap + 1];
     private final Text text = new Text(32);
-    private final TextWrap buf = new TextWrap();
+    private final CharArray buf = new CharArray();
     private int measuring;
 
     public CPU() {

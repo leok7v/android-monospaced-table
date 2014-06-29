@@ -29,15 +29,15 @@
 
 package android.mono.table.etc;
 
-public class TextWrap implements TextInterface {
+public class CharArray implements TextInterface {
 
     private char[] array;
     private int offset;
     private int length;
 
-    public TextWrap() { }
+    public CharArray() { }
 
-    public TextWrap wrap(char[] a, int ofs, int len) {
+    public CharArray wrap(char[] a, int ofs, int len) {
         array = a;
         offset = ofs;
         length = len;

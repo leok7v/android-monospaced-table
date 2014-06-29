@@ -61,7 +61,7 @@ public final class Words implements DataModel {
     private AssetFileDescriptor afd;
     private FileChannel channel;
     private final Text number = new Text();
-    private final TextWrap word = new TextWrap();
+    private final CharArray word = new CharArray();
     private boolean once;
 
     public Words(Context ctx) {
