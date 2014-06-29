@@ -79,52 +79,47 @@ public class TableView extends View {
                              util.measure(getMode(hms), getSize(hms), h));
     }
 
-    private void adjust(float x, float y, Drawable d, RectF rc) {
-        rc.left = x;
-        rc.top = y;
-        rc.right = rc.left + d.getMinimumWidth();
-        rc.bottom = rc.top + d.getMinimumHeight();
-    }
-
     public void draw(Canvas canvas) {
         super.draw(canvas);
-        if (!getLocalVisibleRect(visible) || visible.width() <= 0 || visible.height() <= 0) {
-            return;
+        if (getLocalVisibleRect(visible) && visible.width() > 0 && visible.height() > 0) {
+            canvas.save();
+            try { drawTable(canvas); } finally { canvas.restore(); }
         }
+    }
+
+    private void drawTable(Canvas canvas) {
         visible.left += getPaddingLeft();
         visible.top += getPaddingTop();
         visible.right -= getPaddingRight();
         visible.bottom -= getPaddingBottom();
-        RectF rc = Rects.getRectF();
-        canvas.save();
-        try {
-            int firstVisibleRow = (int)Math.floor(visible.top / height);
-            int lastVisibleRow = (int)Math.ceil((visible.bottom + height) / height);
-            float y = getPaddingTop() + firstVisibleRow * height;
-            int columns = model.columns();
-            int rows = Math.min(model.rows(), lastVisibleRow);
-            canvas.clipRect(visible);
-            for (int r = firstVisibleRow; r < rows; r++) {
-                float x = getPaddingLeft();
-                for (int c = 0; c < columns; c++) {
-                    Drawable d = model.drawable(c, r);
-                    try {
-                        adjust(x, y, d, rc);
-                        d.setBounds((int)Math.floor(x), (int)Math.floor(y), Math.round(rc.right), Math.round(rc.bottom));
-                        canvas.clipRect(visible, Region.Op.REPLACE);
-                        Rect b = model.bounds(c, r); // based on rc because text bounds are vertically negative
-                        canvas.clipRect(x, y, x + b.width(), y + b.height(), Region.Op.INTERSECT);
-                        d.draw(canvas);
-                        x += widths[c];
-                    } finally {
-                        model.recycle(d);
+        int firstVisibleRow = (int)Math.floor(visible.top / height);
+        int lastVisibleRow = (int)Math.ceil((visible.bottom + height) / height);
+        float y = getPaddingTop() + firstVisibleRow * height;
+        int columns = model.columns();
+        int rows = Math.min(model.rows(), lastVisibleRow);
+        canvas.clipRect(visible);
+        for (int r = firstVisibleRow; r < rows; r++) {
+            float x = getPaddingLeft();
+            for (int c = 0; c < columns; c++) {
+                Drawable d = model.drawable(c, r);
+                try {
+                    int mw = d.getMinimumWidth();
+                    int mh = d.getMinimumHeight();
+                    d.setBounds((int)Math.floor(x), (int)Math.floor(y), Math.round(x + mw), Math.round(y + mh));
+                    canvas.clipRect(visible, Region.Op.REPLACE);
+                    Rect b = model.bounds(c, r);
+                    if (b.width() != widths[c]) {
+                        requestLayout();
+                        return;
                     }
+                    canvas.clipRect(x, y, x + b.width(), y + b.height()); // intersect
+                    d.draw(canvas);
+                    x += widths[c];
+                } finally {
+                    model.recycle(d);
                 }
-                y += height;
             }
-        } finally {
-            Rects.recycle(rc);
-            canvas.restore();
+            y += height;
         }
     }
 
