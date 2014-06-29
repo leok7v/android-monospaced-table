@@ -74,7 +74,9 @@ public class util {
     }
 
     public static boolean equals(CharSequence ca1, CharSequence ca2) {
-        if (ca1 != null && ca2 != null && ca1.length() == ca2.length()) {
+        if (ca1 == ca2) {
+            return true;
+        } else if (ca1 != null && ca2 != null && ca1.length() == ca2.length()) {
             int n = ca1.length();
             for (int i = 0; i < n; i++) {
                 if (ca1.charAt(i) != ca2.charAt(i)) {
@@ -82,8 +84,9 @@ public class util {
                 }
             }
             return true;
+        } else {
+            return false;
         }
-        return equals(ca1, ca2);
     }
 
     public static float unitToPixels(int unit, float size) {
