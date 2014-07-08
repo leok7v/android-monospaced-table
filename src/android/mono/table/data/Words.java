@@ -70,11 +70,17 @@ public final class Words implements DataModel {
 
     public void open(Object... args) {
         afd = context.getResources().openRawResourceFd((Integer)args[0]);
-        channel = new FileInputStream(afd.getFileDescriptor()).getChannel();
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(afd.getFileDescriptor());
+            channel = new FileInputStream(afd.getFileDescriptor()).getChannel();
+        } finally {
+            util.close(fis);
+        }
     }
 
     public void close() {
-        if (afd != null) {
+        if (afd != null) { // AssetFileDescriptor does not implement Closeable
             try { afd.close(); } catch (IOException e) { trace(e); }
             afd = null;
         }
