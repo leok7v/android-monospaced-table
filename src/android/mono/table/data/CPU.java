@@ -47,19 +47,27 @@ public final class CPU extends ProcFS {
         long iowait;
         long irq;
         long softirq;
-        float load; // %%
+        float load; // %% load per processor at current frequency
+        long freq;
+        long max; // frequency per processor
+        float scaled; // %% of loaded scaled by freq/max per processor
         long nanos; // System.nanoTime() timestamp
     }
 
-    private final int ap = Runtime.getRuntime().availableProcessors();
+    private static final int AP = Runtime.getRuntime().availableProcessors();
+    private static final float[] load  = new float[AP + 1];
     private final Stats[][] stats = new Stats[2][];
-    private final Stats[] delta = new Stats[ap + 1];
+    private final Stats[] delta = new Stats[AP + 1];
     private final Text text = new Text(32);
     private final CharArray buf = new CharArray();
     private int measuring;
+    private final Freq[] freq = new Freq[AP];
+    private Runnable done;
+    private final Runnable[] updated = new Runnable[AP + 1];
+    private final boolean[] awaiting = new boolean[AP + 1];
 
     public CPU() {
-        super(8);
+        super(10);
         for (int i = 0; i < delta.length; i++) {
             delta[i] = new Stats();
         }
@@ -69,43 +77,101 @@ public final class CPU extends ProcFS {
                 stats[k][i] = new Stats();
             }
         }
+        for (int k = 0; k < AP; k++) {
+            freq[k] = new Freq();
+            final int cpu = k;
+            updated[k] = new Runnable() { public void run() { updated(cpu); } };
+        }
+        updated[AP] = new Runnable() { public void run() { updated(AP); } };
     }
 
-    public int columns() {
-        return ap + 2;
+    public void open(Object... args) {
+        for (int i = 0; i < freq.length; i++) {
+            freq[i].open("/sys/devices/system/cpu/cpu" + i + "/cpufreq/stats/time_in_state");
+        }
+        super.open(args);
     }
 
-    public int rows() { return 9; }
+    public void close() {
+        for (Freq f : freq) { f.close(); }
+        super.close();
+    }
+
+    public int columns() { return AP + 2; } // +2 because of (label & all)
+
+    public int rows() { return 12; }
+
+    public void update(Runnable r) {
+        done = r;
+        awaiting[AP] = true;
+        super.update(updated[AP]);
+        for (int i = 0; i < freq.length; i++) {
+            awaiting[i] = true;
+            freq[i].update(updated[i]);
+        }
+    }
+
+    public void updated(int cpu) {
+        awaiting[cpu] = false;
+        for (boolean a : awaiting) {
+            if (a) {
+                return;
+            }
+        }
+        delta[0].scaled = 0;
+        for (int i = 0; i < freq.length; i++) {
+            delta[i+1].max    = freq[i].max;
+            delta[i+1].scaled = Math.round(freq[i].scale * 1000) / 10f;
+            delta[i+1].freq   = freq[i].average;
+            delta[0].scaled += freq[i].scale;
+        }
+        delta[0].max = freq[0].max;
+        delta[0].scaled = Math.round(delta[0].scaled / freq.length * 1000) / 10f;
+        for (int i = 0; i < load.length; i++) {
+            load[i] = Math.round((delta[i].load / 100) * (delta[i].scaled / 100) * 1000) / 10f ;
+        }
+        if (done != null) {
+            done.run();
+            done = null;
+        }
+    }
 
     public TextInterface getText(int c, int r) {
         Stats[] st = delta;
         text.reset();
         if (measuring > 0) {
-            text.append("100.00%"); // the longest
+            text.append("freq MHz"); // the longest
         } else if (c == 0) {
             switch (r) {
-                case 0: text.append("cpu"); break;
-                case 1: text.append("user"); break;
-                case 2: text.append("nice"); break;
-                case 3: text.append("system"); break;
-                case 4: text.append("idle"); break;
-                case 5: text.append("iowait"); break;
-                case 6: text.append("irq"); break;
-                case 7: text.append("softirq"); break;
-                case 8: text.append("load"); break;
+                case  0: text.append("cpu"); break;
+                case  1: text.append("user"); break;
+                case  2: text.append("nice"); break;
+                case  3: text.append("system"); break;
+                case  4: text.append("idle"); break;
+                case  5: text.append("iowait"); break;
+                case  6: text.append("irq"); break;
+                case  7: text.append("softirq"); break;
+                case  8: text.append("load"); break;
+                case  9: text.append("freq MHz"); break;
+                case 10: text.append("scale"); break;
+                case 11: text.append("scaled"); break;
             }
         } else {
             c = c - 1;
             switch (r) {
-                case 0: if (st[c].cpu < 0) { text.append("all"); } else { text.append(st[c].cpu); } break;
-                case 1: text.append(st[c].user); break;
-                case 2: text.append(st[c].nice); break;
-                case 3: text.append(st[c].system); break;
-                case 4: text.append(st[c].idle); break;
-                case 5: text.append(st[c].iowait); break;
-                case 6: text.append(st[c].irq); break;
-                case 7: text.append(st[c].softirq); break;
-                case 8: text.append(st[c].load); text.append('%'); break;
+                case  0: if (st[c].cpu < 0) { text.append("all"); } else { text.append(st[c].cpu); } break;
+                case  1: text.append(st[c].user); break;
+                case  2: text.append(st[c].nice); break;
+                case  3: text.append(st[c].system); break;
+                case  4: text.append(st[c].idle); break;
+                case  5: text.append(st[c].iowait); break;
+                case  6: text.append(st[c].irq); break;
+                case  7: text.append(st[c].softirq); break;
+                case  8: text.append(st[c].load); text.append('%'); break;
+                case  9: text.append((st[c].cpu < 0 ? st[c].max : st[c].freq) / 1000); break;
+                case 10: text.append(st[c].scaled); text.append('%'); break;
+                case 11: text.append(Math.round((st[c].scaled / 100f) * (st[c].load / 100f) * 1000) / 10f);
+                         text.append('%'); break;
             }
         }
         return text;
@@ -126,7 +192,7 @@ public final class CPU extends ProcFS {
 
     protected void parse(Data d, int len, int count, boolean hasLastLineBreak) {
 
-        count = Math.min(count, ap + 1);
+        count = Math.min(count, AP + 1);
         int c = 0;
         int n = 0;
         int start = 0;
@@ -234,6 +300,108 @@ public final class CPU extends ProcFS {
         long idle_delta = (s1.idle + s1.iowait) - (s0.idle + s0.iowait);
         long total = busy_delta + idle_delta;
         return total == 0 ? 0 : Math.round(busy_delta * 1000f / total) / 10f;
+    }
+
+    public static final class Freq extends ProcFS {
+
+        /*
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/stats/total_trans"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/stats/trans_table"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state"
+            499200 13839
+            1000000 33473513
+            1500000 17524650
+            This is simplistic implementation that assumes that all frequencies are
+            present, in order and always at the same rows. If it will be proven to
+            be incorrect - a bit more involving implementation is needed.
+        */
+        public float  scale;   // [0..1] 1 being 100%
+        public long   average; // frequency in KHz
+        public long   max;     // max frequency in KHz
+
+        private Runnable done;
+        private final Runnable updated = new Runnable() { public void run() { updated(); } };
+        private long[] freq0;
+        private long[] time0;
+        private long[] freq1;
+        private long[] time1;
+
+        public Freq() {
+            super(2);
+        }
+
+        public void update(Runnable r) {
+            done = r;
+            super.update(updated);
+        }
+
+        public void updated() {
+            assertion(freq0.length == rows());
+            int n = freq0.length;
+            System.arraycopy(freq0, 0, freq1, 0, n);
+            System.arraycopy(time0, 0, time1, 0, n);
+            for (int r = 0; r < n; r++) {
+                freq0[r] = Numbers.parseLong(super.getText(0, r));
+                // if this assertion does not hold switch to O(n^2) search for frequencies
+                assertion(freq1[r] == 0 || freq1[r] == freq0[r]);
+                time0[r] = Numbers.parseLong(super.getText(1, r));
+            }
+            if (freq1[0] != 0) {
+                long cycles = 0; // total cpu cycles for the last delta
+                max = 0;    // frequency
+                long total = 0;  // time
+                for (int r = 0; r < n; r++) {
+                    long delta = time0[r] - time1[r];
+                    cycles += freq0[r] * delta;
+                    total += delta;
+                    max = Math.max(max, freq0[r]);
+                }
+                scale = (float)cycles / (max * total);
+                average = cycles / total;
+            }
+            if (done != null) {
+                done.run();
+                done = null;
+            }
+        }
+
+        protected void parse(Data d, int len, int count, boolean hasLastLineBreak) {
+            int c = 0;
+            int n = 0;
+            int start = 0;
+            int i = 0;
+            while (i < len) {
+                if (c == 0 && d.chars[i] == ' ') {
+                    d.offsets[0][n] = start;
+                    d.lengths[0][n] = i - start;
+                    start = i + 1;
+                    c++;
+                } else if (d.chars[i] == '\n') {
+                    d.offsets[1][n] = start;
+                    d.lengths[1][n] = i - start;
+                    n++;
+                    start = i + 1;
+                    c = 0;
+                }
+                i++;
+            }
+            if (!hasLastLineBreak) {
+                d.offsets[1][n] = start;
+                d.lengths[1][n] = len - start;
+                n++;
+            }
+            assertion(n == count);
+            if (freq0 == null || freq0.length != count) {
+                freq0 = new long[count];
+                time0 = new long[count];
+                freq1 = new long[count];
+                time1 = new long[count];
+            }
+        }
+
     }
 
 }
