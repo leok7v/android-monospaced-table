@@ -359,8 +359,10 @@ public final class CPU extends ProcFS {
                     total += delta;
                     max = Math.max(max, freq0[r]);
                 }
-                scale = (float)cycles / (max * total);
-                average = cycles / total;
+                if (total > 0) {
+                    scale = (float)cycles / (max * total);
+                    average = cycles / total;
+                }
             }
             if (done != null) {
                 done.run();
