@@ -55,7 +55,7 @@ public class utf8 {
     // https://android.googlesource.com/platform/libcore/+/master/libart/src/main/java/java/lang/String.java
     // public String(byte[] data, int offset, int byteCount, Charset charset) { ...
 
-    public static int utf8Decode(byte[] d, int offset, int byteCount, char[] v, int s, int len) {
+    public static int decode(byte[] d, int offset, int byteCount, char[] v, int s, int len) {
         assertion(v.length + s >= byteCount);
         int idx = offset;
         final int last = offset + byteCount;
@@ -171,7 +171,7 @@ public class utf8 {
 
     // https://android.googlesource.com/platform/libcore/+/jb-mr2-release/luni/src/main/native/java_nio_charset_Charsets.cpp
 
-    public static int utf8Encode(char[] chars, int offset, int length, byte[] out, int s, int len) {
+    public static int encode(char[] chars, int offset, int length, byte[] out, int s, int len) {
         final int end = offset + length;
         final int limit = s + len;
         assertion(limit <= out.length);
@@ -230,30 +230,30 @@ public class utf8 {
     private static char[] chars = new char[80];
 
     public static void smokeTest() {
-        int k = utf8Decode(helloBytes, 0, helloBytes.length, chars, 0, chars.length);
+        int k = decode(helloBytes, 0, helloBytes.length, chars, 0, chars.length);
         assertion(k == helloChars.length);
         if (k > 0) {
             for (int i = 0; i < k; i++) {
                 assertion(helloChars[i] == chars[i]);
             }
-            int n = utf8Encode(chars, 0, k, bytes, 0, bytes.length);
+            int n = encode(chars, 0, k, bytes, 0, bytes.length);
             assertion(n == helloBytes.length);
             for (int i = 0; i < n; i++) {
                 assertion(helloBytes[i] == bytes[i]);
             }
         }
         final int N = 1000;
-        timestamp("utf8Decode");
-        for (int i = 0; i < N; i++) { utf8Decode(helloBytes, 0, helloBytes.length, chars, 0, chars.length); }
-        timestamp("utf8Decode");
+        timestamp("decode");
+        for (int i = 0; i < N; i++) { decode(helloBytes, 0, helloBytes.length, chars, 0, chars.length); }
+        timestamp("decode");
 
-        timestamp("utf8Encode");
-        for (int i = 0; i < N; i++) { utf8Encode(chars, 0, k, bytes, 0, chars.length); }
-        timestamp("utf8Encode");
+        timestamp("encode");
+        for (int i = 0; i < N; i++) { encode(chars, 0, k, bytes, 0, chars.length); }
+        timestamp("encode");
     }
 
-//  time: "utf8Decode" 109 microseconds
-//  time: "utf8Encode" 81 microseconds
+//  time: "decode" 109 microseconds
+//  time: "encode" 81 microseconds
 
     static {
         smokeTest();

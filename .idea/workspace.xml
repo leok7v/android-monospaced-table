@@ -9,7 +9,7 @@
     </filters>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="01531648-18c5-414f-90fb-dcc907ab165f" name="Default" comment="utf8">
+    <list default="true" id="01531648-18c5-414f-90fb-dcc907ab165f" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/android/mono/table/data/ProcFS.java" afterPath="$PROJECT_DIR$/src/android/mono/table/data/ProcFS.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/android/mono/table/etc/utf8.java" afterPath="$PROJECT_DIR$/src/android/mono/table/etc/utf8.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
@@ -34,7 +34,32 @@
     <favorites_list name="Mono Table" />
   </component>
   <component name="FileEditorManager">
-    <leaf />
+    <leaf>
+      <file leaf-file-name="utf8.java" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/android/mono/table/etc/utf8.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.4090909" vertical-offset="3010" max-vertical-offset="4200">
+              <caret line="239" column="28" selection-start-line="239" selection-start-column="28" selection-end-line="239" selection-end-column="28" />
+              <folding>
+                <element signature="e#0#11001#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ProcFS.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/android/mono/table/data/ProcFS.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="2550" max-vertical-offset="3598">
+              <caret line="190" column="18" selection-start-line="190" selection-start-column="18" selection-end-line="190" selection-end-column="18" />
+              <folding>
+                <element signature="e#0#7692#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FindManager">
     <FindUsagesManager>
@@ -55,8 +80,8 @@
         <option value="$PROJECT_DIR$/src/android/mono/table/etc/CharArray.java" />
         <option value="$PROJECT_DIR$/src/android/mono/table/data/Words.java" />
         <option value="$PROJECT_DIR$/src/android/mono/table/data/CPU.java" />
-        <option value="$PROJECT_DIR$/src/android/mono/table/data/ProcFS.java" />
         <option value="$PROJECT_DIR$/src/android/mono/table/app/App.java" />
+        <option value="$PROJECT_DIR$/src/android/mono/table/data/ProcFS.java" />
         <option value="$PROJECT_DIR$/src/android/mono/table/etc/utf8.java" />
       </list>
     </option>
@@ -427,12 +452,16 @@
       <created>1404954044319</created>
       <updated>1404954044319</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="utf8 removed Charset.Decoder/Encoder (too slow)">
+      <created>1404954941971</created>
+      <updated>1404954941971</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="14" y="22" width="1906" height="1054" extended-state="0" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934132" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -441,7 +470,7 @@
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32846716" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32846716" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32846716" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934132" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -487,7 +516,8 @@
     <MESSAGE value="close FileInputStream" />
     <MESSAGE value="added Frequency per processor data" />
     <MESSAGE value="utf8" />
-    <option name="LAST_COMMIT_MESSAGE" value="utf8" />
+    <MESSAGE value="utf8 removed Charset.Decoder/Encoder (too slow)" />
+    <option name="LAST_COMMIT_MESSAGE" value="utf8 removed Charset.Decoder/Encoder (too slow)" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -555,16 +585,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/android/mono/table/etc/utf8.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.27272728" vertical-offset="462" max-vertical-offset="4200">
-          <caret line="45" column="31" selection-start-line="45" selection-start-column="31" selection-end-line="45" selection-end-column="31" />
-          <folding>
-            <element signature="e#0#11049#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/android/mono/table/etc/util.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.3181818" vertical-offset="0" max-vertical-offset="4956">
@@ -583,10 +603,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/android/mono/table/data/ProcFS.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.3181818" vertical-offset="2562" max-vertical-offset="3598">
-          <caret line="201" column="19" selection-start-line="201" selection-start-column="19" selection-end-line="201" selection-end-column="19" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="2550" max-vertical-offset="3598">
+          <caret line="190" column="18" selection-start-line="190" selection-start-column="18" selection-end-line="190" selection-end-column="18" />
           <folding>
-            <element signature="e#0#7696#0" expanded="true" />
+            <element signature="e#0#7692#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/android/mono/table/etc/utf8.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.4090909" vertical-offset="3010" max-vertical-offset="4200">
+          <caret line="239" column="28" selection-start-line="239" selection-start-column="28" selection-end-line="239" selection-end-column="28" />
+          <folding>
+            <element signature="e#0#11001#0" expanded="true" />
           </folding>
         </state>
       </provider>
