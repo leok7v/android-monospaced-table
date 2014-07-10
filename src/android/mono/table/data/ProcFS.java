@@ -188,7 +188,7 @@ public abstract class ProcFS implements DataModel {
             if (d.chars == null || d.chars.length != len) {
                 d.chars = new char[len];
             }
-            utf8.utf8Decoder(d.bytes, 0, len, d.chars, 0, d.chars.length);
+            utf8.utf8Decode(d.bytes, 0, len, d.chars, 0, d.chars.length);
             boolean hasLastLineBreak = d.chars[len - 1] == '\n';
             int count = countLines(d, len, hasLastLineBreak);
             parse(d, len, count, hasLastLineBreak);
