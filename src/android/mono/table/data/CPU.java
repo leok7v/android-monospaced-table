@@ -34,6 +34,7 @@ import android.mono.table.app.*;
 import android.mono.table.etc.*;
 
 import static android.mono.table.etc.util.*;
+import static java.lang.String.format;
 
 public final class CPU extends ProcFS {
 
@@ -255,7 +256,7 @@ public final class CPU extends ProcFS {
                         case 5: st[cpu].iowait = Numbers.parseLong(buf, 0, buf.length()); break;
                         case 6: st[cpu].irq = Numbers.parseLong(buf, 0, buf.length()); break;
                         case 7: st[cpu].softirq = Numbers.parseLong(buf, 0, buf.length()); break;
-                        default: assertion(false, "r=" + r);
+                        default: assertion("r=" + r);
                     }
                 }
             }
@@ -303,7 +304,6 @@ public final class CPU extends ProcFS {
     }
 
     public static final class Freq extends ProcFS {
-
         /*
             cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
             cat "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
@@ -339,29 +339,31 @@ public final class CPU extends ProcFS {
         }
 
         public void updated() {
-            assertion(freq0.length == rows());
-            int n = freq0.length;
-            System.arraycopy(freq0, 0, freq1, 0, n);
-            System.arraycopy(time0, 0, time1, 0, n);
-            for (int r = 0; r < n; r++) {
-                freq0[r] = Numbers.parseLong(super.getText(0, r));
-                // if this assertion does not hold switch to O(n^2) search for frequencies
-                assertion(freq1[r] == 0 || freq1[r] == freq0[r]);
-                time0[r] = Numbers.parseLong(super.getText(1, r));
-            }
-            if (freq1[0] != 0) {
-                long cycles = 0; // total cpu cycles for the last delta
-                max = 0;    // frequency
-                long total = 0;  // time
+            if (freq0 != null) { // is procFS file open and parsed?
+                assertion(freq0.length == rows() ? true : format("expected %d freq0.length=%d", rows(), freq0.length));
+                int n = freq0.length;
+                System.arraycopy(freq0, 0, freq1, 0, n);
+                System.arraycopy(time0, 0, time1, 0, n);
                 for (int r = 0; r < n; r++) {
-                    long delta = time0[r] - time1[r];
-                    cycles += freq0[r] * delta;
-                    total += delta;
-                    max = Math.max(max, freq0[r]);
+                    freq0[r] = Numbers.parseLong(super.getText(0, r));
+                    // if this assertion does not hold switch to O(n^2) search for frequencies
+                    assertion(freq1[r] == 0 || freq1[r] == freq0[r]);
+                    time0[r] = Numbers.parseLong(super.getText(1, r));
                 }
-                if (total > 0) {
-                    scale = (float)cycles / (max * total);
-                    average = cycles / total;
+                if (freq1[0] != 0) {
+                    long cycles = 0; // total cpu cycles for the last delta
+                    max = 0;    // frequency
+                    long total = 0;  // time
+                    for (int r = 0; r < n; r++) {
+                        long delta = time0[r] - time1[r];
+                        cycles += freq0[r] * delta;
+                        total += delta;
+                        max = Math.max(max, freq0[r]);
+                    }
+                    if (total > 0) {
+                        scale = (float)cycles / (max * total);
+                        average = cycles / total;
+                    }
                 }
             }
             if (done != null) {

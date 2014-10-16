@@ -46,7 +46,9 @@ public abstract class ProcFS implements DataModel {
         public int[][] lengths;
     }
 
+    private File file;
     private RandomAccessFile raf;
+
     protected volatile int ix;
     private final AtomicInteger ai = new AtomicInteger();
     private final Data data[] = new Data[2];
@@ -72,13 +74,18 @@ public abstract class ProcFS implements DataModel {
     protected abstract void parse(Data d, int len, int count, boolean hasLastLineBreak);
 
     public void open(Object... args) {
+        assertion(thread == null && raf == null);
+        file = new File((String)args[0]);
+        thread = new Thread(updater);
+        thread.start();
+    }
+
+    private boolean open() {
         try {
-            assertion(thread == null && raf == null);
-            raf = new RandomAccessFile((String)args[0], "r");
-            thread = new Thread(updater);
-            thread.start();
+            raf = new RandomAccessFile(file, "r");
+            return true;
         } catch (FileNotFoundException e) {
-            throw new Error("failed to open " + args[0]);
+            return false;
         }
     }
 
@@ -164,6 +171,10 @@ public abstract class ProcFS implements DataModel {
     }
 
     private void read() {
+        if (raf == null && !open()) {
+            // procFS file like "/sys/devices/system/cpu/cpu2/cpufreq/stats/time_in_state" may be absent
+            return; // see https://groups.google.com/a/chromium.org/forum/#!msg/chromium-bugs/Llf6lNgeMkg/IFnFiQHvuWMJ
+        }
         Data d = data[ix];
         try {
             int len = 0;
@@ -194,7 +205,8 @@ public abstract class ProcFS implements DataModel {
             parse(d, len, count, hasLastLineBreak);
             ix = ai.incrementAndGet() % 2;
         } catch (IOException e) {
-            throw new Error(e);
+            util.close(raf);
+            raf = null;
         }
     }
 

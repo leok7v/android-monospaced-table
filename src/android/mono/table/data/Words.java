@@ -148,7 +148,7 @@ public final class Words implements DataModel {
         try {
             int len = (int)afd.getLength();
             MappedByteBuffer mem = channel.map(FileChannel.MapMode.READ_ONLY, afd.getStartOffset(), len);
-            assertion(!mem.hasArray(), "otherwise can and should use mem.array() and mem.arrayOffset()");
+            assertion(!mem.hasArray() ? true : "otherwise can and should use mem.array() and mem.arrayOffset()");
             byte[] bytes = new byte[len];
             mem.get(bytes); // ~40 milliseconds
             Charset utf8 = Charset.forName("UTF-8");
@@ -158,7 +158,7 @@ public final class Words implements DataModel {
             // see: http://en.wikipedia.org/wiki/Byte_order_mark#Representations_of_byte_order_marks_by_encoding
             int offset0 = bytes[0] == (byte)(0xEF) && bytes[1] == (byte)(0xBB) && bytes[2] == (byte)(0xBF) ? 3 : 0;
             int offset1 = chars[0] == (char)(0xFEFF) ? 1 : 0;
-            assertion(bytes.length - offset0 == len - offset1, "ASCII assumption for words list did not hold");
+            assertion(bytes.length - offset0 == len - offset1 ? true : "ASCII assumption for words list did not hold");
             // ~370 milliseconds
             int count = 0;
             for (int i = 0; i < len; i++) {
@@ -184,7 +184,7 @@ public final class Words implements DataModel {
                 n++;
             }
             assertion(n == count);
-            assertion(offsets[n - 1] + lengths[n - 1] == len || offsets[n - 1] + lengths[n - 1] == len - 1,
+            assertion(offsets[n - 1] + lengths[n - 1] == len || offsets[n - 1] + lengths[n - 1] == len - 1 ? true :
                       "offsets[n - 1]=" + offsets[n - 1] + " lengths[n - 1]=" + lengths[n - 1] + " len=" + len);
         } catch (IOException e) {
             throw new Error(e);
