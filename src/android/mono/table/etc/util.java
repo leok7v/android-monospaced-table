@@ -113,21 +113,10 @@ public class util {
         }
     }
 
-/*
-    public static void assertion(boolean b, CharSequence msg) {
-        if (!b) {
-            StackTraceElement caller = getCallersCaller(4);
-            Class cc = forName(caller.getClassName());
-            trace0(cc.getPackage().getName(), cc, caller.getMethodName(), caller.getLineNumber(),
-                   "assertion failed: \"", msg, "\"");
-            rethrow(new AssertionError(msg));
-        }
-    }
-*/
-
     /**
-     * This variant of assertion should be used in a way
-     * assertion((2+2 == 4 ? HOLDS : String.format("expected %d+%d == %d", 2, 2, 4));
+     * This variant of zero memory pressure assertion should be used in a way
+     * assertion((2+2 == 4 ? true : String.format("expected %d+%d == %d", 2, 2, 4));
+     * Note: compiler `boxes` boolean "true" to Boolean.TRUE automatically and this is guarantied by contract.
      *
      * @param trueOrMessage Boolean.TRUE message to log
      */
