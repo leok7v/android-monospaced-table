@@ -38,6 +38,7 @@ public class App extends Application {
         timestamp("log2");
     }
 
+// for N = 1,000,000:
 // "log1" 628 milliseconds ~== 0.628 nanoseconds per "if () { log(); }"
 // "log2" 3468 milliseconds ~= 3.468 nanoseconds per "log( ? );"
 
