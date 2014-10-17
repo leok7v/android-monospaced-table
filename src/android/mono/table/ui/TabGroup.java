@@ -106,6 +106,7 @@ public class TabGroup extends LinearLayout implements View.OnClickListener {
         if (getChildCount() == 1) {
             activate(b, tab);
         }
+        requestLayout();
     }
 
     private void activate(Button b, View tab) {
@@ -117,12 +118,14 @@ public class TabGroup extends LinearLayout implements View.OnClickListener {
         b.setBackgroundColor(C.NC_BLUE);
         b.setSelected(true);
         active = b;
+        buttons.invalidate();
     }
 
     private void deactivate(Button b) {
         b.setTextColor(C.NC_OFFWHITE);
         b.setBackgroundColor(C.NC_DKGRAY);
         b.setSelected(false);
+        buttons.invalidate();
     }
 
     public void onClick(View v) {
